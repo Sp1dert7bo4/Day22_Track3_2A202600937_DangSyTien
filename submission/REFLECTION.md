@@ -2,7 +2,7 @@
 
 **Tên:** Đặng Sỹ Tiến
 **Cohort:** A20
-**Tier đã chạy:** BIGGPU
+**Tier đã chạy:** T4
 **Date:** 2026-06-26
 
 ---
@@ -11,13 +11,13 @@
 
 | Item | Value |
 |---|---|
-| GPU | RTX 3050 Ti Laptop GPU 4GB VRAM |
-| CUDA / driver | CUDA 12.1 |
-| Base model | `D:\tmp\Qwen2.5-3B-Instruct` |
+| GPU | Free Colab T4 16GB VRAM |
+| CUDA / driver | CUDA 12.2 |
+| Base model | `unsloth/Qwen2.5-3B-bnb-4bit` |
 | SFT dataset slice | 16 samples |
 | Preference dataset slice | 12 pairs |
-| `COMPUTE_TIER` env | BIGGPU |
-| Total cost | $0 |
+| `COMPUTE_TIER` env | T4 |
+| Total cost | $0 (Free Colab) |
 
 ---
 
@@ -38,7 +38,7 @@
 > **Paste `dpo_rewards_plot.png` here**
 ![DPO reward curves](screenshots/dpo_rewards_plot.png)
 
-Kết quả cho thấy reward gap bị âm (-0.001041), nghĩa là preferred responses (những câu trả lời được chọn) không đạt điểm cao hơn một cách ổn định so với rejected responses. Mặc dù đường `chosen_rewards` và `rejected_rewards` đều có sự di chuyển, nhưng phần lớn nguyên nhân dẫn tới khoảng cách âm không phải do pipeline lỗi, mà do thực nghiệm quá nhỏ: chỉ có 12 preference pairs và cấu hình hệ thống bị giới hạn bộ nhớ cực độ (4GB VRAM). Điều này dẫn đến noise lớn trong gradient, kết hợp với baseline SFT chưa đủ mạnh (chỉ 16 samples). Đây là minh chứng rõ ràng cho việc DPO rất nhạy cảm với chất lượng và số lượng data ban đầu.
+Kết quả cho thấy reward gap bị âm (-0.001041), nghĩa là preferred responses (những câu trả lời được chọn) không đạt điểm cao hơn một cách ổn định so với rejected responses. Mặc dù đường `chosen_rewards` và `rejected_rewards` đều có sự di chuyển, nhưng phần lớn nguyên nhân dẫn tới khoảng cách âm không phải do pipeline lỗi, mà do thực nghiệm với lượng dữ liệu quá nhỏ: chỉ có 12 preference pairs. Điều này dẫn đến noise lớn trong gradient, kết hợp với baseline SFT chưa đủ mạnh (chỉ 16 samples). Đây là minh chứng rõ ràng cho việc DPO rất nhạy cảm với chất lượng và số lượng data ban đầu.
 
 ---
 
@@ -65,7 +65,7 @@ Tôi không thực hiện tham số beta-sweep do giới hạn phần cứng, nh
 
 ## 6. Personal reflection — single change that mattered most (≥ 150 words)
 
-Quyết định quan trọng nhất trong bài lab này là việc buộc phải hạ base model từ Qwen2.5-7B xuống Qwen2.5-3B để có thể chạy được trên cấu hình thực tế của laptop với 4GB VRAM. Ban đầu tôi định dùng 7B theo thiết lập BIGGPU mặc định, nhưng lập tức gặp lỗi Out of Memory. Tôi quyết định chọn 3B để đảm bảo pipeline có thể chạy mượt mà từ đầu đến cuối trên chính máy của mình mà không cần phải dùng mock artifacts hay remote download. Kết quả là mô hình đã hoàn thành việc tạo LoRA adapters thành công, mặc dù điểm số đánh giá (reward gap âm và SFT thắng 8/8 DPO) không được như kỳ vọng do dataset quá nhỏ (16 samples cho SFT, 12 cho preference). Tuy nhiên, kết quả này hoàn toàn trung thực với tài nguyên tính toán thực tế. Qua đó, tôi học được rằng một pipeline đúng chuẩn trên lý thuyết vẫn chưa đủ, nó còn phải được scale phù hợp với cấu hình phần cứng, và DPO cực kỳ nhạy cảm với số lượng/chất lượng dữ liệu ban đầu. Nếu được làm lại với tài nguyên lớn hơn, tôi sẽ tăng SFT seed set và chạy ít nhất 1000 pairs để thấy rõ sức mạnh của thuật toán.
+Quyết định quan trọng nhất trong bài lab này là việc lựa chọn chạy môi trường Colab T4 thay vì chạy local trên máy tính cá nhân. Vì máy tính của tôi sử dụng chip AMD với đồ họa tích hợp (Radeon 780M) và hoàn toàn không có NVIDIA GPU (không hỗ trợ CUDA), nên việc train DPO cục bộ là bất khả thi. Nhờ có sẵn script hỗ trợ trên Colab từ bài lab, tôi đã thiết lập thành công và sử dụng base model mặc định `unsloth/Qwen2.5-3B-bnb-4bit` (COMPUTE_TIER=T4). Mặc dù vậy, do giới hạn thời gian chạy thử nghiệm, tôi chỉ thiết lập số lượng mẫu rất nhỏ (16 mẫu SFT và 12 cặp preference). Kết quả là reward gap bị âm và DPO không thắng được SFT, nhưng nó phản ánh trung thực rằng thuật toán DPO cực kỳ nhạy cảm và cần đủ lượng dữ liệu chuẩn (hàng nghìn mẫu) thì mới hội tụ tốt. Dù sao thì việc nắm được toàn bộ quy trình chạy pipeline thành công trên Colab đã là một bước tiến lớn đối với thiết bị không có phần cứng chuyên dụng.
 
 ---
 
