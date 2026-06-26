@@ -35,8 +35,8 @@
 
 ## 3. Reward curves analysis (≥ 100 words)
 
-> **Paste `dpo_rewards_plot.png` here**
-![DPO reward curves](screenshots/dpo_rewards_plot.png)
+> **Paste `03_dpo_reward_curves.png` here**
+![DPO reward curves](screenshots/03_dpo_reward_curves.png)
 
 Kết quả cho thấy reward gap bị âm (-0.001041), nghĩa là preferred responses (những câu trả lời được chọn) không đạt điểm cao hơn một cách ổn định so với rejected responses. Mặc dù đường `chosen_rewards` và `rejected_rewards` đều có sự di chuyển, nhưng phần lớn nguyên nhân dẫn tới khoảng cách âm không phải do pipeline lỗi, mà do thực nghiệm với lượng dữ liệu quá nhỏ: chỉ có 12 preference pairs. Điều này dẫn đến noise lớn trong gradient, kết hợp với baseline SFT chưa đủ mạnh (chỉ 16 samples). Đây là minh chứng rõ ràng cho việc DPO rất nhạy cảm với chất lượng và số lượng data ban đầu.
 
@@ -44,8 +44,8 @@ Kết quả cho thấy reward gap bị âm (-0.001041), nghĩa là preferred res
 
 ## 4. Qualitative comparison (≥ 8 examples)
 
-> **Paste `sft_vs_dpo_comparison.png` here**
-![Side by side table](screenshots/sft_vs_dpo_comparison.png)
+> **Paste `04_side_by_side_table.png` here**
+![Side by side table](screenshots/04_side_by_side_table.png)
 
 | # | Prompt category | Winner |
 |---|---|---|
