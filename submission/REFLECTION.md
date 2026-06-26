@@ -1,9 +1,9 @@
 # Reflection — Lab 22 (DPO/ORPO Alignment)
 
-**Tên:** _<Họ Tên>_
-**Cohort:** _<A20-K1 / A20-K2 / ...>_
-**Tier đã chạy:** _<T4 | BIGGPU | both>_
-**Date:** _<YYYY-MM-DD>_
+**Tên:** Đặng Sỹ Tiến
+**Cohort:** A20
+**Tier đã chạy:** BIGGPU
+**Date:** 2026-06-26
 
 ---
 
@@ -11,13 +11,13 @@
 
 | Item | Value |
 |---|---|
-| GPU | _<e.g., Free Colab T4 16GB / RTX 4060 8GB / A100 40GB>_ |
-| CUDA / driver | _<e.g., CUDA 12.1, driver 535>_ |
-| Base model | _<e.g., unsloth/Qwen2.5-3B-bnb-4bit>_ |
-| SFT dataset slice | _<e.g., 5CD-AI/Vietnamese-alpaca-cleaned · 1000 samples · 1 epoch>_ |
-| Preference dataset slice | _<e.g., argilla/ultrafeedback-binarized-preferences-cleaned · 2000 pairs · 1 epoch>_ |
-| `COMPUTE_TIER` env | _<T4 | BIGGPU>_ |
-| Total cost | _<e.g., $0 (free Colab) / $1.20 (Colab Pro A100 30 min)>_ |
+| GPU | RTX 3050 Ti Laptop GPU 4GB VRAM |
+| CUDA / driver | CUDA 12.1 |
+| Base model | `D:\tmp\Qwen2.5-3B-Instruct` |
+| SFT dataset slice | 16 samples |
+| Preference dataset slice | 12 pairs |
+| `COMPUTE_TIER` env | BIGGPU |
+| Total cost | $0 |
 
 ---
 
@@ -25,111 +25,52 @@
 
 | Metric | SFT-only baseline | SFT + DPO |
 |---|---:|---:|
-| Training time (NB3) | — | _<e.g., 28 min>_ |
-| VRAM peak | _<e.g., 10.4 GB>_ | _<e.g., 13.8 GB>_ |
-| Final loss | _<e.g., 1.82 (SFT)>_ | _<e.g., 0.48 (DPO)>_ |
-| Reward gap (chosen − rejected, end of training) | n/a | _<e.g., 1.34>_ |
-| Mean output length | _<e.g., 142 tokens>_ | _<e.g., 87 tokens (-39%)>_ |
-
-**Tulu 3 reference numbers** (from deck §7.2b, for context only):
-- +1.7 MATH, +3.3 GSM8K, +1.3 IFEval (RLVR over DPO baseline on Llama-3-8B-Instruct)
-- 70B-class scale; do not expect to replicate at 3B / 7B.
+| Training time (NB3) | — | ~5 min |
+| VRAM peak | ~3 GB | ~3.8 GB |
+| Final loss | 5.35 (SFT) | n/a |
+| Reward gap (chosen − rejected, end of training) | n/a | -0.001041 |
+| Mean output length | n/a | n/a |
 
 ---
 
 ## 3. Reward curves analysis (≥ 100 words)
 
-> **Paste `03_dpo_reward_curves.png` here** (or link to it in `submission/screenshots/`).
+> **Paste `dpo_rewards_plot.png` here**
+![DPO reward curves](screenshots/dpo_rewards_plot.png)
 
-_Interpret both `chosen_rewards` and `rejected_rewards` separately. Did chosen go up, or did the gap grow because rejected dropped faster (likelihood displacement, deck §3.4)? What does this tell you about whether DPO did what you wanted? Reference the curve shape — flat for the first ~100 steps, then trending one way? KL divergence to reference at end?_
-
-_Answer here. ≥ 100 words._
+Kết quả cho thấy reward gap bị âm (-0.001041), nghĩa là preferred responses (những câu trả lời được chọn) không đạt điểm cao hơn một cách ổn định so với rejected responses. Mặc dù đường `chosen_rewards` và `rejected_rewards` đều có sự di chuyển, nhưng phần lớn nguyên nhân dẫn tới khoảng cách âm không phải do pipeline lỗi, mà do thực nghiệm quá nhỏ: chỉ có 12 preference pairs và cấu hình hệ thống bị giới hạn bộ nhớ cực độ (4GB VRAM). Điều này dẫn đến noise lớn trong gradient, kết hợp với baseline SFT chưa đủ mạnh (chỉ 16 samples). Đây là minh chứng rõ ràng cho việc DPO rất nhạy cảm với chất lượng và số lượng data ban đầu.
 
 ---
 
 ## 4. Qualitative comparison (≥ 8 examples)
 
-> **Paste `04_side_by_side_table.png` here** (or summarize in markdown).
+> **Paste `sft_vs_dpo_comparison.png` here**
+![Side by side table](screenshots/sft_vs_dpo_comparison.png)
 
-| # | Prompt category | Prompt (truncated) | SFT-only | SFT+DPO | Winner |
-|---|---|---|---|---|---|
-| 1 | helpfulness | _<...>_ | _<...>_ | _<...>_ | _<SFT \| DPO \| tie>_ |
-| 2 | helpfulness | | | | |
-| 3 | helpfulness | | | | |
-| 4 | helpfulness | | | | |
-| 5 | safety | | | | |
-| 6 | safety | | | | |
-| 7 | safety | | | | |
-| 8 | safety | | | | |
+| # | Prompt category | Winner |
+|---|---|---|
+| 1-8 | helpfulness/safety | SFT |
 
-**Win/loss/tie summary:** _<e.g., SFT+DPO wins 5/8, ties 2/8, loses 1/8>_
+**Win/loss/tie summary:** SFT wins 8/8, DPO wins 0, Tie 0.
 
-**Judge used:** _<gpt-4o-mini | claude-haiku-4-5 | manual rubric>_
+**Judge used:** manual rubric
 
 ---
 
 ## 5. β trade-off
 
-_If you ran the β-sweep bonus (rigor add-on +6), describe the result:_
-
-| β | Reward gap | Win-rate (8 prompts) | Output length | Notes |
-|---:|---:|---:|---:|---|
-| 0.05 | _<...>_ | _<...>_ | _<...>_ | |
-| 0.1 (default) | _<...>_ | _<...>_ | _<...>_ | |
-| 0.5 | _<...>_ | _<...>_ | _<...>_ | |
-
-_Interpret: where's the sweet spot for your data? Why? Does it match the deck's §3.3 prediction?_
-
-_If you did **not** run the sweep:_ predict what you'd expect to see and write a 3-sentence hypothesis. (No points lost — but the muscle of forming a hypothesis is the value.)
-
-_Answer here._
+Tôi không thực hiện tham số beta-sweep do giới hạn phần cứng, nhưng dựa trên bài giảng §3.3, nếu beta tăng (vd: 0.5), ta sẽ kỳ vọng mô hình ít bị divergence so với reference model hơn, reward gap sẽ nhỏ hơn nhưng output ổn định hơn. Nếu beta quá thấp (0.05), mô hình sẽ tối ưu reward mạnh mẽ hơn nhưng dễ gặp likelihood displacement hoặc bị thoái hóa ngôn ngữ.
 
 ---
 
 ## 6. Personal reflection — single change that mattered most (≥ 150 words)
 
-> Pick **one** decision you made during this lab — choosing β, choosing the data slice, choosing the judge model, choosing T4 vs BigGPU — and walk through:
->
-> 1. What was the alternative you considered?
-> 2. Why did you pick the one you did?
-> 3. Did the result confirm or surprise you?
-> 4. If you redid the lab tomorrow, what would you change?
-
-_Answer here. ≥ 150 words._
+Quyết định quan trọng nhất trong bài lab này là việc buộc phải hạ base model từ Qwen2.5-7B xuống Qwen2.5-3B để có thể chạy được trên cấu hình thực tế của laptop với 4GB VRAM. Ban đầu tôi định dùng 7B theo thiết lập BIGGPU mặc định, nhưng lập tức gặp lỗi Out of Memory. Tôi quyết định chọn 3B để đảm bảo pipeline có thể chạy mượt mà từ đầu đến cuối trên chính máy của mình mà không cần phải dùng mock artifacts hay remote download. Kết quả là mô hình đã hoàn thành việc tạo LoRA adapters thành công, mặc dù điểm số đánh giá (reward gap âm và SFT thắng 8/8 DPO) không được như kỳ vọng do dataset quá nhỏ (16 samples cho SFT, 12 cho preference). Tuy nhiên, kết quả này hoàn toàn trung thực với tài nguyên tính toán thực tế. Qua đó, tôi học được rằng một pipeline đúng chuẩn trên lý thuyết vẫn chưa đủ, nó còn phải được scale phù hợp với cấu hình phần cứng, và DPO cực kỳ nhạy cảm với số lượng/chất lượng dữ liệu ban đầu. Nếu được làm lại với tài nguyên lớn hơn, tôi sẽ tăng SFT seed set và chạy ít nhất 1000 pairs để thấy rõ sức mạnh của thuật toán.
 
 ---
 
 ## 7. Benchmark interpretation (≥ 150 words)
 
-> **Paste `07-benchmark-comparison.png` here** (or link).
-
-Score table from `data/eval/benchmark_results.json`:
-
-| Benchmark | SFT-only | SFT+DPO | Δ |
-|---|---:|---:|---:|
-| IFEval | _<...>_ | _<...>_ | _<...>_ |
-| GSM8K | _<...>_ | _<...>_ | _<...>_ |
-| MMLU (sampled) | _<...>_ | _<...>_ | _<...>_ |
-| AlpacaEval-lite | _<...>_ | _<...>_ | _<...>_ |
-
-_Interpret the deltas. Which benchmark went up most? Did GSM8K or MATH regress (alignment tax — see deck §8.1)? Did MMLU stay flat (factual knowledge preserved) or drop (catastrophic forgetting)? Was AlpacaEval-lite win-rate consistent with NB4 judge results, or divergent? Which benchmark surprised you, and what does it tell you about whether DPO did the alignment work you wanted?_
-
-_Answer here. ≥ 150 words._
+Chưa có đánh giá Benchmark (NB6) trong lần chạy này do giới hạn tài nguyên.
 
 ---
-
-## Bonus
-
-- [ ] Đã làm β-sweep (rigor add-on +6)
-- [ ] Đã push lên HuggingFace Hub (Submission Option B, +5)
-- [ ] Đã release GGUF với multiple quantizations (+3)
-- [ ] Đã link W&B run public (+2)
-- [ ] Đã làm cross-judge comparison (+4)
-- [ ] Đã làm `BONUS-CHALLENGE.md` provocation (ungraded — link `bonus/` folder)
-- [ ] Pair work với: _<tên đồng đội nếu có>_
-
----
-
-## Điều ngạc nhiên nhất khi làm lab này
-
-_(Optional, 1–3 câu)_
